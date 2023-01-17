@@ -8,6 +8,8 @@
 
 #define ssid      "Simple"
 #define pass "AsdfghjkL"
+// #define ssid "netis_FF6112"
+// #define pass "password"
 
 #define API_KEY "AIzaSyCwRlBYwaW0TV781ZA51UOxwD1vVRi-ALI"
 
@@ -100,28 +102,27 @@ void loop() {
   content.set("fields/humidity/doubleValue", humidity);
   content.set("fields/temperature/doubleValue", temperature);
 
-    if (moisture > 250 && waterPumpSate){
+    if (moisture > 200 && waterPumpSate){
     waterPumpSate = false;
+    digitalWrite(waterPumpPin, waterPumpSate);
     pumpData.clear();
   pumpData.set("fields/water/booleanValue", waterPumpSate);
     if (Firebase.Firestore.patchDocument(&fbdoPump, FIREBASE_PROJECT_ID, "", pumpDocumentPath.c_str(), pumpData.raw(), "water" /* updateMask */))
     {
       String res = String(fbdoPump.payload().c_str());
-    Serial.printf("ok\n%s\n\n", res.c_str());
-    fbdoPump.clear();
+      Serial.printf("ok\n%s\n\n", res.c_str());
+      fbdoPump.clear();
       
     }
   else{
-    Serial.println(fbdoPump.errorReason());
-    
+      Serial.println("AAAA");
+      Serial.println(fbdoPump.errorReason());
   }
   }
   digitalWrite(waterPumpPin, waterPumpSate);
 
-  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw(), "moisture,humidity,temperature,waterPump" /* updateMask */)){
+  if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw(), "moisture,humidity,temperature" /* updateMask */)){
     String res = String(fbdo.payload().c_str());
-    // Serial.printf("ok\n%s\n\n", res.c_str());
-    waterPumpSate = res.indexOf("true") > -1;
     fbdo.clear();
     }
   else{
@@ -132,6 +133,13 @@ void loop() {
     String res = String(fbdoPump.payload().c_str());
     // Serial.printf("ok\n%s\n\n", res.c_str());
     waterPumpSate = res.indexOf("true") > -1;
+    if(waterPumpSate){
+      moisture = 1024 - analogRead(A0);
+      if(moisture > 200){
+        waterPumpSate = false;
+      }
+    }
+    digitalWrite(waterPumpPin, waterPumpSate);
     fbdoPump.clear();
   }
 
@@ -141,4 +149,5 @@ void loop() {
   }
   Serial.print("Pump = ");
   Serial.println(waterPumpSate ? "ON" : "OFF");
+  digitalWrite(waterPumpPin, waterPumpSate);
 }
