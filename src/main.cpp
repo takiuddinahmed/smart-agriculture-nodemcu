@@ -100,6 +100,24 @@ void loop() {
   content.set("fields/humidity/doubleValue", humidity);
   content.set("fields/temperature/doubleValue", temperature);
 
+    if (moisture > 250 && waterPumpSate){
+    waterPumpSate = false;
+    pumpData.clear();
+  pumpData.set("fields/water/booleanValue", waterPumpSate);
+    if (Firebase.Firestore.patchDocument(&fbdoPump, FIREBASE_PROJECT_ID, "", pumpDocumentPath.c_str(), pumpData.raw(), "water" /* updateMask */))
+    {
+      String res = String(fbdoPump.payload().c_str());
+    Serial.printf("ok\n%s\n\n", res.c_str());
+    fbdoPump.clear();
+      
+    }
+  else{
+    Serial.println(fbdoPump.errorReason());
+    
+  }
+  }
+  digitalWrite(waterPumpPin, waterPumpSate);
+
   if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw(), "moisture,humidity,temperature,waterPump" /* updateMask */)){
     String res = String(fbdo.payload().c_str());
     // Serial.printf("ok\n%s\n\n", res.c_str());
@@ -121,22 +139,6 @@ void loop() {
     Serial.println(fbdo.errorReason());
     
   }
-  if (moisture > 400){
-    waterPumpSate = false;
-    pumpData.clear();
-  pumpData.set("fields/water/booleanValue", waterPumpSate);
-    if (Firebase.Firestore.patchDocument(&fbdoPump, FIREBASE_PROJECT_ID, "", pumpDocumentPath.c_str(), pumpData.raw(), "water" /* updateMask */))
-    {
-      String res = String(fbdoPump.payload().c_str());
-    Serial.printf("ok\n%s\n\n", res.c_str());
-    fbdoPump.clear();
-      
-    }
-  else{
-    Serial.println(fbdoPump.errorReason());
-    
-  }
-  }
-  digitalWrite(waterPumpPin, waterPumpSate);
-  Serial.println(waterPumpSate);
+  Serial.print("Pump = ");
+  Serial.println(waterPumpSate ? "ON" : "OFF");
 }
